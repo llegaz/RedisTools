@@ -1,0 +1,37 @@
+{
+    "name": "llegaz/redis-tools",
+    "description": "Tools and interfaces to help inspect Redis Databases",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Laurent LEGAZ",
+            "email": "laurent@legaz.eu"
+        }
+    ],
+    "keywords": [
+        "phpredis",
+        "predis",
+        "redis",
+        "tools"
+    ],
+    "require": {
+        "llegaz/redis-adapter": "~0.0.5"
+    },
+    "require-dev": {
+        "symfony/var-dumper": "~6.4",
+        "friendsofphp/php-cs-fixer": "~3.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "LLegaz\\Redis\\Tools\\": "src/"
+        }
+    },
+    "scripts": {
+        "cs":"@phpcsfixer",
+        "phpcsfixer": "./vendor/bin/php-cs-fixer fix --config=./.php-cs-fixer.php --diff -vvv"
+    },
+    "scripts-descriptions": {
+        "cs": "Clean the sources"
+    }
+}
