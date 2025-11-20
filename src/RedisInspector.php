@@ -53,9 +53,19 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
 
     }
 
+    /**
+     * @todo rework this
+     *
+     * @param string $key
+     * @return int
+     */
     public function getTtl(string $key): int
     {
+        if (!$this->isConnected()) {
+            $this->throwCLEx();
+        }
 
+        return $this->getRedis()->ttl($key);
     }
 
     public function printAllRedis(): array
