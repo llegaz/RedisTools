@@ -1,33 +1,33 @@
 <?php
 
+declare(strict_types=1);
 
 namespace LLegaz\Redis\Tools;
 
 /**
  * OK there is a lot to rework here
- * 
+ *
  * KEEP IN MIND :
- * 
+ *
  *    - Hash aren't same type as STRING
- * 
+ *
  *    - SimpleCache PSR-16 is based on STRING SET (Key / value)
  *    - while Cache Pools PSR-6 are base on Hash key (poolname) + field (key) + value
- * 
- * 
- * 
+ *
+ *
+ *
  *
  * @author Laurent LEGAZ <laurent@legaz.eu>
  */
 interface InspectorInterface
 {
-    
     /**
      * print or return as string all cache info, for a given poolname. (Key, value and TTL)
-     * 
-     * 
+     *
+     *
      * Default Cache pool if $pool parameter is null
-     * 
-     * if $silent parameter is false then print on STD_OUT probably have to Handle OB things 
+     *
+     * if $silent parameter is false then print on STD_OUT probably have to Handle OB things
      * (@todo handle CLI colors too check CLI mate ?)
      */
     public function printCachePool(string $pool = null, bool $silent = false): ?string;
@@ -36,9 +36,9 @@ interface InspectorInterface
      * @todo rework this
      *
      * print only pool keys set (Hash Keys)
-     * 
+     *
      * it uses getPoolKeys
-     * 
+     *
      *
      * @return null
      * @throws ConnectionLostException
@@ -92,11 +92,11 @@ interface InspectorInterface
 
     /**
      * print the entire REDIS data concerning PSR-16 cache and PSR-6 pools cache
-     * 
-     * array by DB 1 to 16 
-     * 
+     *
+     * array by DB 1 to 16
+     *
      * then by pools' names (maybe find a default name for the SimpleCache)
-     * 
+     *
      * @return array
      */
     public function printAllRedis(): array;
