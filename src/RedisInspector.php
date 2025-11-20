@@ -25,7 +25,7 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
 
     public function getAllCacheStoreAsArray(): array
     {
-
+        
     }
 
     public function getAllCacheStoreAsString(): string
@@ -33,9 +33,19 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
 
     }
 
+    /**
+     * @todo rework this
+     *
+     * @return array
+     * @throws ConnectionLostException
+     */
     public function getInfo(): array
     {
+        if (!$this->isConnected()) {
+            $this->throwCLEx();
+        }
 
+        return $this->getRedis()->info();
     }
 
     public function getPoolKeys(string $pool): array
