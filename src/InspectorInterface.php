@@ -20,12 +20,6 @@ namespace LLegaz\Redis\Tools;
  */
 interface InspectorInterface
 {
-    public function set(string $key, mixed $value, null|int|\DateInterval $ttl = null): bool;
-    
-    
-    
-    
-    
     
     /**
      * print or return as string all cache info, for a given poolname. (Key, value and TTL)
@@ -43,41 +37,14 @@ interface InspectorInterface
      *
      * print only pool keys set (Hash Keys)
      * 
+     * it uses getPoolKeys
+     * 
      *
      * @return null
      * @throws ConnectionLostException
      */
     public function printCachePoolKeys(string $pool = null, bool $silent = false): ?string;
 
-    /**
-     * @todo rework this
-     *
-     * @param string $key
-     * @return int
-     */
-    public function getTtl(string $key): int;
-    /*{
-        if (!$this->isConnected()) {
-            $this->throwCLEx();
-        }
-
-        return $this->getRedis()->ttl($key);
-    }*/
-
-    /**
-     * @todo rework this
-     *
-     * @return array
-     * @throws ConnectionLostException
-     */
-    public function getInfo(): array;
-    /*{
-        if (!$this->isConnected()) {
-            $this->throwCLEx();
-        }
-
-        return $this->getRedis()->info();
-    }*/
 
     /**
      * @param string $pool the pool's name
@@ -86,11 +53,26 @@ interface InspectorInterface
      */
     public function getPoolKeys(string $pool): array;
 
+    /**
+     * @todo rework this
+     *
+     * @return array
+     * @throws ConnectionLostException
+     */
+    public function getInfo(): array;
 
     /**
      * @todo rework this
      *
-     * key => value array is returned corresponding accurately to the redis cache set
+     * @param string $key
+     * @return int
+     */
+    public function getTtl(string $key): int;
+
+    /**
+     * @todo rework this
+     *
+     * key => value array is returned corresponding accurately to the redis cache set (the PSR-16 SimpleCache only)
      *
      * @return array
      * @throws ConnectionLostException
@@ -99,13 +81,25 @@ interface InspectorInterface
 
     /**
      *
-     * print everything in Cache Store for the selected Database
+     * print everything in Cache Store for the selected Database (the PSR-16 SimpleCache only)
      * (except HSET entries)
+     * select DB prior call
      *
      * @return string
      * @throws ConnectionLostException
      */
     public function getAllCacheStoreAsString(): string;
+
+    /**
+     * print the entire REDIS data concerning PSR-16 cache and PSR-6 pools cache
+     * 
+     * array by DB 1 to 16 
+     * 
+     * then by pools' names (maybe find a default name for the SimpleCache)
+     * 
+     * @return array
+     */
+    public function printAllRedis(): array;
 
     /**
      *
@@ -114,5 +108,5 @@ interface InspectorInterface
      *
      * @return array all the keys in redis (for a selected db ?)
      */
-    private function getAllkeys(): array;
+    public function getAllkeys(): array;
 }
