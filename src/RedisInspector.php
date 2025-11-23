@@ -52,9 +52,18 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
         return $this->getRedis()->info();
     }
 
+    /**
+     * @param string $pool the pool's name
+     * @return array
+     * @throws ConnectionLostException
+     */
     public function getPoolKeys(string $pool): array
     {
+        if (!$this->isConnected()) {
+            $this->throwCLEx();
+        }
 
+        return $this->getRedis()->hkeys($pool);
     }
 
     /**
@@ -102,9 +111,13 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
                 }
             } elseif (isset($info['db' . $i])) {
                 $this->selectDatabase($i);
-                //$keys = $this->getAllkeys();
+                $keys = $this->getAllkeys();
                 $count = $this->getKeysCount($info['db' . $i]);
-                dd($info['db' . $i], $count);
+                //dd($info['db' . $i], $count, $keys);
+                foreach ($keys as $key) {
+                    dump($this->getPoolKeys($key));
+                }
+                
                 
             }
         }
