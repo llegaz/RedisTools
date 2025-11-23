@@ -35,6 +35,10 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
 
     /**
      * @todo rework this
+     * 
+     * @WARNING BE AWARE THAT THE PAYLOAD RETURNED BY THIS METHOS IS NOT THE SAME 
+     *          RATHER YOU USE PREDIS CLIENT OR THE PHP-REDIS ONE !
+     * 
      *
      * @return array
      * @throws ConnectionLostException
@@ -68,9 +72,55 @@ class RedisInspector extends \LLegaz\Redis\RedisAdapter implements InspectorInte
         return $this->getRedis()->ttl($key);
     }
 
-    public function printAllRedis(): array
+    /**
+     * print all keys /values / TTL / count for each DB used in redis server instance 
+     * 
+     * 
+     * @return array
+     */
+    public function dumpAllRedis(bool $silent = false): array
     {
+        /**
+         * 2 scenarios: either phpredis or predis
+         */
+        $info = $this->getInfo();
+        $redis = $this->getRedis()->toString();
+        $count = 0;
+        $keys = [];
 
+        for ($i = 0; $i < 16; $i++) {
+            if ($redis === \LLegaz\Redis\PredisClient::PREDIS) {
+                if (isset($info['Keyspace']['db' . $i])) {
+                    $this->selectDatabase($i);
+
+                    dd($info['Keyspace']['db' . $i]);
+                    /*foreach ($poolNamesToDisplay as $poolName) {
+                        $data = $cache->fetchAllFromPool($poolName);
+                    }*/
+                    // print values from DEFAULT POOL
+                    //pU::colorGreenToCLI('DEFAULT pool data:');
+                }
+            } elseif (isset($info['db' . $i])) {
+                $this->selectDatabase($i);
+                //$keys = $this->getAllkeys();
+                $count = $this->getKeysCount($info['db' . $i]);
+                dd($info['db' . $i], $count);
+                
+            }
+        }
+    }
+
+    private function getKeysCount(string $payload) :int {
+            $parts  = explode(',', $payload);
+
+            foreach ($parts as $part) {
+                $count = explode('=', $part);
+                if (trim($count[0]) === "keys") {
+                    return (int) trim($count[1]);
+                }
+            }
+
+            return 0;
     }
 
     public function printCachePool(string $pool = null, bool $silent = false): ?string

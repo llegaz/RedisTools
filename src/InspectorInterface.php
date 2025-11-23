@@ -77,7 +77,7 @@ interface InspectorInterface
      * @return array
      * @throws ConnectionLostException
      */
-    public function getAllCacheStoreAsArray();
+    public function getAllCacheStoreAsArray(): array;
 
     /**
      *
@@ -99,7 +99,7 @@ interface InspectorInterface
      *
      * @return array
      */
-    public function printAllRedis(): array;
+    public function dumpAllRedis(bool $silent = false): array;
 
     /**
      *
