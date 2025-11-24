@@ -21,11 +21,11 @@ use Psr\Log\LoggerInterface;
  *
  * => so the more keys the more blocking it will be for all redis clients trying to
  *    access the redis db...
- * 
- * 
+ *
+ *
  * Also note that this package is intended to be used with my others redis packages
  * and my PSR-6, PSR-16 implementation, see llegaz/redis-cache
- * 
+ *
  * @link https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
  *
  *
@@ -54,11 +54,21 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         $this->cli = new CLImate();
     }
 
+    /**
+      * @todo do this
+     *
+     * @return array
+     */
     public function dumpCacheStore(): array
     {
 
     }
 
+    /**
+      * @todo do this
+     *
+     * @return array
+     */
     public function dumpAllCacheStores(): array
     {
 
@@ -150,6 +160,12 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         }
     }
 
+    /**
+      * @todo refacto this
+     *
+     * @param bool $silent
+     * @return array
+     */
     private function dumpAllPhpRedis(bool $silent = false): array
     {
         $info = $this->getInfo();
@@ -179,7 +195,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                     $toReturn[$dbName]['keys'] = [];
                 } else {
                     $this->cli->backgroundLightYellow()->blink()->dim()->black()->inline('> > > >');
-                    $this->cli->yellow()->bold()->inline(' '.$dbName)
+                    $this->cli->yellow()->bold()->inline(' ' . $dbName)
                             ->yellow()
                             ->inline(' (' . $count . ' key' . ($count > 1 ? 's' : '') . ') ')
                     ;
@@ -199,7 +215,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                             $table[] = [
                                 $key . ' pool key' => $hkey,
                                 $key . ' pool value' => $hval,
-                                'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                                'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
                             ];
                         }
                         if ($silent) {
@@ -217,7 +233,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                         $cache[] = [
                             self::CACHE . ' key' => $key,
                             self::CACHE . ' value' => $this->getRedis()->get($key) ?? 'empty or error',
-                            'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                            'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
                         ];
                     }
                 } // end foreach
@@ -226,7 +242,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                     // populate toReturn array with data
                     $toReturn[$dbName][self::CACHE] = $cache;
                 } else {
-                    $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt .' PSR-6 pool' .  ($poolCnt>1?'s':'') . PHP_EOL);
+                    $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt . ' PSR-6 pool' . ($poolCnt > 1 ? 's' : '') . PHP_EOL);
                     $this->cli->yellow()->inline($dbName)
                             ->yellow()->inline(' - ')
                             ->yellow()->underline()->inline(self::CACHE)
@@ -240,6 +256,12 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         return $toReturn;
     }
 
+    /**
+      * @todo don't forget this
+     *
+     * @param bool $silent
+     * @return array
+     */
     private function dumpAllPredis(bool $silent = false): array
     {
         $toReturn = [];
@@ -281,7 +303,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     private function getKeysCount(string $payload): int
     {
         $parts  = explode(',', $payload);
-dump($parts);
+
         foreach ($parts as $part) {
             $count = explode('=', $part);
             if (trim($count[0]) === 'keys') {
@@ -293,12 +315,13 @@ dump($parts);
     }
 
     /**
-     * 
-     * @param string $pool
-     * @param bool $silent
-     * @return string|null
-     * @throws Exception
-     */
+      * @todo do this
+      *
+      * @param string $pool
+      * @param bool $silent
+      * @return string|null
+      * @throws Exception
+      */
     public function dumpCachePool(string $pool = null, bool $silent = false): array
     {
         $pool = $this->getRedis()->hgetall($key);
@@ -313,7 +336,7 @@ dump($parts);
                 $table[] = [
                     $key . ' pool key' => $hkey,
                     $key . ' pool value' => $hval,
-                    'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                    'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
                 ];
             }
             if ($silent) {
@@ -331,6 +354,14 @@ dump($parts);
         }
     }
 
+    /**
+      * @todo do this
+      *
+     *
+     * @param string $pool
+     * @param bool $silent
+     * @return array
+     */
     public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array
     {
 
