@@ -30,7 +30,7 @@ interface InspectorInterface
      * if $silent parameter is false then print on STD_OUT probably have to Handle OB things
      * (@todo handle CLI colors too check CLI mate ?)
      */
-    public function printCachePool(string $pool = null, bool $silent = false): ?string;
+    public function dumpCachePool(string $pool = null, bool $silent = false): array;
 
     /**
      * @todo rework this
@@ -43,7 +43,7 @@ interface InspectorInterface
      * @return null
      * @throws ConnectionLostException
      */
-    public function printCachePoolKeys(string $pool = null, bool $silent = false): ?string;
+    public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array;
 
 
     /**
@@ -70,14 +70,21 @@ interface InspectorInterface
     public function getTtl(string $key): int;
 
     /**
-     * @todo rework this
      *
      * key => value array is returned corresponding accurately to the redis cache set (the PSR-16 SimpleCache only)
      *
      * @return array
      * @throws ConnectionLostException
      */
-    public function getAllCacheStoreAsArray(): array;
+    public function dumpCacheStore(): array;
+
+    /**
+     * Basically dumpCacheStore method applied to all databases set (16 by default)
+     * and not only to the currently select db.
+     * 
+     * @return array
+     */
+    public function dumpAllCacheStores(): array;
 
     /**
      *
@@ -88,7 +95,6 @@ interface InspectorInterface
      * @return string
      * @throws ConnectionLostException
      */
-    public function getAllCacheStoreAsString(): string;
 
     /**
      * print the entire REDIS data concerning PSR-16 cache and PSR-6 pools cache
