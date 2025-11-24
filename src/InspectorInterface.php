@@ -22,13 +22,12 @@ namespace LLegaz\Redis\Tools;
 interface InspectorInterface
 {
     /**
-     * print or return as string all cache info, for a given poolname. (Key, value and TTL)
+     * print or return as array all cache pool fields, for a given pool's name. (key, value and TTL)
      *
      *
      * Default Cache pool if $pool parameter is null
      *
-     * if $silent parameter is false then print on STD_OUT probably have to Handle OB things
-     * (@todo handle CLI colors too check CLI mate ?)
+     * if $silent parameter is false then all data are printed directly using STD_OUT (terminal)
      */
     public function dumpCachePool(string $pool = null, bool $silent = false): array;
 
@@ -81,7 +80,7 @@ interface InspectorInterface
     /**
      * Basically dumpCacheStore method applied to all databases set (16 by default)
      * and not only to the currently select db.
-     * 
+     *
      * @return array
      */
     public function dumpAllCacheStores(): array;
