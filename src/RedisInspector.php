@@ -21,6 +21,12 @@ use Psr\Log\LoggerInterface;
  *
  * => so the more keys the more blocking it will be for all redis clients trying to
  *    access the redis db...
+ * 
+ * 
+ * Also note that this package is intended to be used with my others redis packages
+ * and my PSR-6, PSR-16 implementation, see llegaz/redis-cache
+ * 
+ * @link https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
  *
  *
  * @author Laurent LEGAZ <laurent@legaz.eu>
@@ -30,7 +36,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     /**
      * display and settings
      */
-    public const CACHE = 'SimpleCachePSR-16';
+    public const CACHE = 'SimpleCache PSR-16';
     public const DB_COUNT = 16;
     private CLImate $cli;
 
@@ -121,19 +127,12 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         /**
          * 2 scenarios: either phpredis or predis
          */
-        if (!$silent) {
-            $this->cli->inline('Dumping Redis server data using ');
-        }
-        if ($this->getRedis()->toString() === PredisClient::PREDIS) {
-            if (!$silent) {
-                $this->cli->underline()->inline('Predis')->out(' client.');
-            }
+        $client = $this->getRedis()->toString();
+        $this->intro($client, $silent);
+        if ($client === PredisClient::PREDIS) {
 
             return $this->dumpAllPredis($silent);
-        } elseif ($this->getRedis()->toString() === RedisClient::PHP_REDIS) {
-            if (!$silent) {
-                $this->cli->underline()->inline('PhpRedis')->out(' client.');
-            }
+        } elseif ($client === RedisClient::PHP_REDIS) {
 
             return $this->dumpAllPhpRedis($silent);
         }
@@ -141,13 +140,21 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         $this->throwUEx();
     }
 
+    private function intro(string $client, bool $silent = false): void
+    {
+        if (!$silent) {
+            $this->cli->inline('Dumping Redis server data using ');
+            $this->cli->underline()->inline($client)->out(' client.' . PHP_EOL);
+            $this->cli->backgroundLightBlue()->black()->out('For each DB we first print every pool and their content (PSR-6) and then their Cache Store (PSR-16).');
+        }
+    }
+
     private function dumpAllPhpRedis(bool $silent = false): array
     {
         $info = $this->getInfo();
         $count = 0;
-        $keys = [];
         $toReturn = [];
-        $dbName = '';
+        $ttl = null;
 
         /***
          * we parse all dbs, each DB owns a data store (PSR-16 SimpleCache) and possibly many pools
@@ -155,35 +162,78 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         for ($i = 0; $i < self::DB_COUNT; $i++) {
             $dbName = 'db' . $i;
             if (isset($info[$dbName])) {
+                $cache = [];
+                $poolCnt = 0;
+
                 $this->selectDatabase($i);
                 $keys = $this->getAllkeys();
                 $count = $this->getKeysCount($info[$dbName]);
-
                 if (count($keys) !== $count) {
                     $this->throwUEx("keys\' count should be the same");
                 }
+
                 if ($silent) {
                     // populate toReturn array with data
                     $toReturn[$dbName]['count'] = $count;
                     $toReturn[$dbName]['keys'] = [];
                 } else {
-                    $this->cli->yellow()->out($dbName)->out('keys count=' . $count);
+                    $this->cli->backgroundLightYellow()->blink()->dim()->black()->inline('> > > >');
+                    $this->cli->yellow()->bold()->inline(' '.$dbName)
+                            ->yellow()
+                            ->inline(' (' . $count . ' key' . ($count > 1 ? 's' : '') . ') ')
+                    ;
+                    $this->cli->backgroundLightYellow()->blink()->dim()->black()->out('< < < <');
                 }
+
                 foreach ($keys as $key) {
-                    $hkeys = $this->getPoolKeys($key);
-                    if (count($hkeys)) {
-                        dump('for the pool named: ' . $key);
-                        foreach ($hkeys as $hkey) {
-                            dump($key . ':' . $hkey . '=' . $this->getRedis()->hget($key, $hkey) . ' - ' . $this->getTtl($key));
+                    $pool = $this->getRedis()->hgetall($key);
+                    /**
+                     * Here goes the POOLs case (PSR-6)
+                     */
+                    if (is_array($pool) && count($pool)) {
+                        $table = [];
+                        ++$poolCnt;
+                        foreach ($pool as $hkey => $hval) {
+                            $ttl = $this->getTtl($key/*, $hkey*/);
+                            $table[] = [
+                                $key . ' pool key' => $hkey,
+                                $key . ' pool value' => $hval,
+                                'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                            ];
                         }
-                    } else {
-                        $this->cli->green()->out(self::CACHE); // STR Cache case
+                        if ($silent) {
+                            // populate toReturn array with data
+                            $toReturn[$dbName][$key] = $table;
+                        } else {
+                            $this->cli->yellow()->inline($dbName)
+                                    ->yellow()->inline(' - ')
+                                    ->yellow()->out($key)
+                            ;
+                            $this->cli->yellow()->table($table);
+                        }
+                    } else { // STR Cache case (PSR-16)
+                        $ttl = $this->getTtl($key);
+                        $cache[] = [
+                            self::CACHE . ' key' => $key,
+                            self::CACHE . ' value' => $this->getRedis()->get($key) ?? 'empty or error',
+                            'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                        ];
                     }
+                } // end foreach
 
+                if ($silent) {
+                    // populate toReturn array with data
+                    $toReturn[$dbName][self::CACHE] = $cache;
+                } else {
+                    $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt .' PSR-6 pool' .  ($poolCnt>1?'s':'') . PHP_EOL);
+                    $this->cli->yellow()->inline($dbName)
+                            ->yellow()->inline(' - ')
+                            ->yellow()->underline()->inline(self::CACHE)
+                            ->yellow()->bold()->out(' (' . count($cache) . ' keys)')
+                    ;
+                    $this->cli->cyan()->table($cache);
                 }
-
-
-            }
+            } // if db exist
         }
 
         return $toReturn;
@@ -194,6 +244,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         $toReturn = [];
 
         $info = $this->getInfo();
+        dump($info);
         $count = 0;
         $keys = [];
         $toReturn = [];
@@ -229,7 +280,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     private function getKeysCount(string $payload): int
     {
         $parts  = explode(',', $payload);
-
+dump($parts);
         foreach ($parts as $part) {
             $count = explode('=', $part);
             if (trim($count[0]) === 'keys') {
