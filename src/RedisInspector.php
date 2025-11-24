@@ -53,12 +53,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         parent::__construct($host, $port, $pwd, $scheme, $db, $persistent, $client, $logger);
         $this->cli = new CLImate();
     }
-    public function getAllCacheStoreAsArray(): array
+
+    public function dumpCacheStore(): array
     {
 
     }
 
-    public function getAllCacheStoreAsString(): string
+    public function dumpAllCacheStores(): array
     {
 
     }
@@ -291,12 +292,46 @@ dump($parts);
         return 0;
     }
 
-    public function printCachePool(string $pool = null, bool $silent = false): ?string
+    /**
+     * 
+     * @param string $pool
+     * @param bool $silent
+     * @return string|null
+     * @throws Exception
+     */
+    public function dumpCachePool(string $pool = null, bool $silent = false): array
     {
-
+        $pool = $this->getRedis()->hgetall($key);
+        /**
+         * Here goes the POOLs case (PSR-6)
+         */
+        if (is_array($pool) && count($pool)) {
+            $table = [];
+            ++$poolCnt;
+            foreach ($pool as $hkey => $hval) {
+                $ttl = $this->getTtl($key/* , $hkey */);
+                $table[] = [
+                    $key . ' pool key' => $hkey,
+                    $key . ' pool value' => $hval,
+                    'TTL' => $ttl === -1 ? "forever" : $ttl . "s",
+                ];
+            }
+            if ($silent) {
+                // populate toReturn array with data
+                $toReturn[$dbName][$key] = $table;
+            } else {
+                $this->cli->yellow()->inline($dbName)
+                        ->yellow()->inline(' - ')
+                        ->yellow()->out($key)
+                ;
+                $this->cli->yellow()->table($table);
+            }
+        } else { // error
+            throw new Exception('pool ' . $pool . ' is empty or doesn\'t exist');
+        }
     }
 
-    public function printCachePoolKeys(string $pool = null, bool $silent = false): ?string
+    public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array
     {
 
     }
