@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace LLegaz\Redis\Tools;
 
 /**
- * OK there is a lot to rework here
  *
  * KEEP IN MIND :
  *
@@ -32,20 +31,20 @@ interface InspectorInterface
     public function dumpCachePool(string $pool = null, bool $silent = false): array;
 
     /**
-     * @todo rework this
-     *
-     * print only pool keys set (Hash Keys)
-     *
-     * it uses getPoolKeys
+     * print only pool keys set (Hash Keys) for the currently selected db only.
      *
      *
-     * @return null
+     * @param string $pool
+     * @param bool $silent
+     * @return array
      * @throws ConnectionLostException
      */
     public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array;
 
 
     /**
+     * for the currently selected db only.
+     *
      * @param string $pool the pool's name
      * @return array
      * @throws ConnectionLostException
@@ -53,7 +52,8 @@ interface InspectorInterface
     public function getPoolKeys(string $pool): array;
 
     /**
-     * @todo rework this
+     * returns Redis server info
+     * (either a flat array in case of PhpRedis or a more sophisticated array if predis is used instead)
      *
      * @return array
      * @throws ConnectionLostException
@@ -61,27 +61,33 @@ interface InspectorInterface
     public function getInfo(): array;
 
     /**
-     * @todo rework this
+     * Return the TTL associated to a key (a entire pool is a key.. see notes in llegaz/redis-cache)
      *
      * @param string $key
      * @return int
+     * @throws ConnectionLostException
      */
     public function getTtl(string $key): int;
 
     /**
+     * An "key => value" array is returned corresponding accurately to the redis cache set
+     * (the PSR-16 SimpleCache only) for the currently selected db only.
      *
-     * key => value array is returned corresponding accurately to the redis cache set (the PSR-16 SimpleCache only)
      *
+     * @param bool $silent
      * @return array
-     * @throws ConnectionLostException
+     * @throws ConnectionLostException | \Exception
      */
     public function dumpCacheStore(bool $silent = false): array;
 
     /**
      * Basically dumpCacheStore method applied to all databases set (16 by default)
-     * and not only to the currently select db.
+     * and not only to the currently selected db.
      *
+     *
+     * @param bool $silent
      * @return array
+     * @throws ConnectionLostException | \Exception
      */
     public function dumpAllCacheStores(bool $silent = false): array;
 
