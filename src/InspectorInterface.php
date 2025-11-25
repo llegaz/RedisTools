@@ -6,7 +6,7 @@ namespace LLegaz\Redis\Tools;
 
 /**
  *
- * KEEP IN MIND :
+ * @here KEEP IN MIND :
  *
  *    - Hash aren't same type as STRING
  *
@@ -27,11 +27,21 @@ interface InspectorInterface
      * Default Cache pool if $pool parameter is null
      *
      * if $silent parameter is false then all data are printed directly using STD_OUT (terminal)
+     *
+     * @caution select DB prior call !
+     *
+     * @param string $pool
+     * @param bool $silent
+     * @return array
+     * @throws ConnectionLostException
+     *
+     * @todo end this please
      */
     public function dumpCachePool(string $pool = null, bool $silent = false): array;
 
     /**
      * print only pool keys set (Hash Keys) for the currently selected db only.
+     * @caution select DB prior call !
      *
      *
      * @param string $pool
@@ -44,6 +54,8 @@ interface InspectorInterface
 
     /**
      * for the currently selected db only.
+     * @caution select DB prior call !
+     *
      *
      * @param string $pool the pool's name
      * @return array
@@ -52,7 +64,7 @@ interface InspectorInterface
     public function getPoolKeys(string $pool): array;
 
     /**
-     * returns Redis server info
+     * Returns Redis server info
      * (either a flat array in case of PhpRedis or a more sophisticated array if predis is used instead)
      *
      * @return array
@@ -61,7 +73,7 @@ interface InspectorInterface
     public function getInfo(): array;
 
     /**
-     * Return the TTL associated to a key (a entire pool is a key.. see notes in llegaz/redis-cache)
+     * Returns the TTL associated to a key (a entire pool is a key.. see notes in llegaz/redis-cache)
      *
      * @param string $key
      * @return int
@@ -73,6 +85,10 @@ interface InspectorInterface
      * An "key => value" array is returned corresponding accurately to the redis cache set
      * (the PSR-16 SimpleCache only) for the currently selected db only.
      *
+     * This method prints everything in Cache Store for the selected Database (the PSR-16 SimpleCache only)
+     * (except HSET entries) or returns those entries as array.
+     *
+     * @caution select DB prior call !
      *
      * @param bool $silent
      * @return array
@@ -81,7 +97,7 @@ interface InspectorInterface
     public function dumpCacheStore(bool $silent = false): array;
 
     /**
-     * Basically dumpCacheStore method applied to all databases set (16 by default)
+     * Basically <code>dumpCacheStore</code> method applied to all databases set (16 by default)
      * and not only to the currently selected db.
      *
      *
@@ -92,10 +108,7 @@ interface InspectorInterface
     public function dumpAllCacheStores(bool $silent = false): array;
 
     /**
-     *
-     * print everything in Cache Store for the selected Database (the PSR-16 SimpleCache only)
-     * (except HSET entries)
-     * select DB prior call
+
      *
      * @return string
      * @throws ConnectionLostException
