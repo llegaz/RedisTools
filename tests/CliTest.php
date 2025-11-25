@@ -7,7 +7,15 @@ require_once 'vendor/autoload.php';
 use LLegaz\Redis\Tools\RedisInspector;
 
 $inspector = new RedisInspector();
-//$inspector->selectDatabase(12);
+
+/*$db=255;
+if ($inspector->selectDatabase($db) === false) {
+    dump("cannot connect to db-" . $db);
+}*/
+
+$inspector->selectDatabase(12);
+
+
 //dump($inspector->getAllkeys());
 
 //dump($inspector->getInfo());
@@ -16,7 +24,7 @@ $inspector = new RedisInspector();
 
 
 
-
-dump($inspector->dumpCacheStore());
+//dump($inspector->dumpCacheStore());
+dump($inspector->dumpAllCacheStores());
 
 //$inspector->dumpAllRedis();
