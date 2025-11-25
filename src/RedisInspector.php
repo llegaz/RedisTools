@@ -104,8 +104,6 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * @todo rework this
-     *
      * @WARNING BE AWARE THAT THE PAYLOAD RETURNED BY THIS METHOD IS NOT THE SAME
      *          RATHER YOU USE PREDIS CLIENT OR THE PHP-REDIS ONE !
      *
