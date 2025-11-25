@@ -78,18 +78,21 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo do this
+      * @todo maybe enhance this
      *
      * @return array
      */
-    public function dumpAllCacheStores(bool $silent = false): array
+    public function dumpAllCacheStores(bool $silent = true): array
     {
+        $toReturn = [];
         $return = $this->dumpAllRedis($silent);
-        foreach ($return as $db_data) {
-            dd($db_data);
+        foreach ($return as $db_idx => $db_data) {
+            if (isset($db_data[self::CACHE])) {
+                $toReturn[$db_idx] = $db_data[self::CACHE];
+            }
         }
 
-        return [];
+        return $toReturn;
     }
 
     /**
