@@ -75,7 +75,7 @@ interface InspectorInterface
      * @return array
      * @throws ConnectionLostException
      */
-    public function dumpCacheStore(): array;
+    public function dumpCacheStore(bool $silent = false): array;
 
     /**
      * Basically dumpCacheStore method applied to all databases set (16 by default)
@@ -83,7 +83,7 @@ interface InspectorInterface
      *
      * @return array
      */
-    public function dumpAllCacheStores(): array;
+    public function dumpAllCacheStores(bool $silent = false): array;
 
     /**
      *
@@ -104,7 +104,7 @@ interface InspectorInterface
      *
      * @return array
      */
-    public function dumpAllRedis(bool $silent = false): array;
+    public function dumpAllRedis(bool $silent = false, int $db_start, int $db_end): array;
 
     /**
      *

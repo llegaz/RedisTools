@@ -17,7 +17,7 @@ use Psr\Log\LoggerInterface;
  * !!!!
  *
  *
- * the redis calls used here are too cpu / memory intensive with an O(n) complexity !
+ * the redis calls used here are too cpu / memory intensive with an n * O(n) complexity !
  *
  * => so the more keys the more blocking it will be for all redis clients trying to
  *    access the redis db...
@@ -35,9 +35,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 {
     /**
      * display and settings
+     *
+     * @todo Maybe we will have (at a certain point) to use <b>llegaz/redis-cache</b> as a project's dependence
+     *       and make the <code>getPoolName</code> method of the <code>CacheEntryPool</code> class usable
      */
-    public const CACHE = 'SimpleCache PSR-16';
-    public const DB_COUNT = 16;
+    private const DEFAULT_POOL_NAME = 'DEFAULT_Cache_Pool';
+    private const CACHE = 'SimpleCache PSR-16';
+    private const DB_COUNT = 16;
     private CLImate $cli;
 
     public function __construct(
@@ -55,13 +59,22 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo do this
+      * @todo maybe enhance this
      *
      * @return array
      */
-    public function dumpCacheStore(): array
+    public function dumpCacheStore(bool $silent = true): array
     {
+        $db = $this->getContext()['database'];
+        $return = $this->dumpAllRedis($silent, $db, $db + 1);
+        if (isset($return['db' . $db])) {
+            $return = $return['db' . $db];
+        }
+        if (isset($return[self::CACHE])) {
+            return $return[self::CACHE];
+        }
 
+        return [];
     }
 
     /**
@@ -69,15 +82,20 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      *
      * @return array
      */
-    public function dumpAllCacheStores(): array
+    public function dumpAllCacheStores(bool $silent = false): array
     {
+        $return = $this->dumpAllRedis($silent);
+        foreach ($return as $db_data) {
+            dd($db_data);
+        }
 
+        return [];
     }
 
     /**
      * @todo rework this
      *
-     * @WARNING BE AWARE THAT THE PAYLOAD RETURNED BY THIS METHOS IS NOT THE SAME
+     * @WARNING BE AWARE THAT THE PAYLOAD RETURNED BY THIS METHOD IS NOT THE SAME
      *          RATHER YOU USE PREDIS CLIENT OR THE PHP-REDIS ONE !
      *
      *
@@ -133,7 +151,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      *
      * @return array
      */
-    public function dumpAllRedis(bool $silent = false): array
+    public function dumpAllRedis(bool $silent = false, int $db_start = 0, int $db_end = self::DB_COUNT): array
     {
         /**
          * 2 scenarios: either phpredis or predis
@@ -142,10 +160,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         $this->intro($client, $silent);
         if ($client === PredisClient::PREDIS) {
 
-            return $this->dumpAllPredis($silent);
+            return $this->dumpAllPredis($silent, $db_start, $db_end);
         } elseif ($client === RedisClient::PHP_REDIS) {
 
-            return $this->dumpAllPhpRedis($silent);
+            return $this->dumpAllPhpRedis($silent, $db_start, $db_end);
         }
 
         $this->throwUEx();
@@ -161,12 +179,15 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo refacto this
+     * @todo refacto this
+     * @todo maybe add new parameters or a parameters array... or object to handle skip pools or simple-cache treatments
      *
      * @param bool $silent
+     * @param int $db_start
+     * @param int $db_end
      * @return array
      */
-    private function dumpAllPhpRedis(bool $silent = false): array
+    private function dumpAllPhpRedis(bool $silent = false, int $db_start, int $db_end): array
     {
         $info = $this->getInfo();
         $count = 0;
@@ -176,7 +197,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         /***
          * we parse all dbs, each DB owns a data store (PSR-16 SimpleCache) and possibly many pools
          */
-        for ($i = 0; $i < self::DB_COUNT; $i++) {
+        for ($i = $db_start; $i < $db_end; $i++) {
             $dbName = 'db' . $i;
             if (isset($info[$dbName])) {
                 $cache = [];
@@ -192,7 +213,6 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                 if ($silent) {
                     // populate toReturn array with data
                     $toReturn[$dbName]['count'] = $count;
-                    $toReturn[$dbName]['keys'] = [];
                 } else {
                     $this->cli->backgroundLightYellow()->blink()->dim()->black()->inline('> > > >');
                     $this->cli->yellow()->bold()->inline(' ' . $dbName)
@@ -262,7 +282,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      * @param bool $silent
      * @return array
      */
-    private function dumpAllPredis(bool $silent = false): array
+    private function dumpAllPredis(bool $silent = false, int $db_start, int $db_end): array
     {
         $toReturn = [];
 
