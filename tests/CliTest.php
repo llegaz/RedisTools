@@ -25,6 +25,10 @@ $inspector->selectDatabase(12);
 
 
 //dump($inspector->dumpCacheStore());
-dump($inspector->dumpAllCacheStores());
+//dump($inspector->dumpAllCacheStores());
+
+$inspector->selectDatabase(1);
+$inspector->dumpCachePoolKeys('test');
+dump($inspector->dumpCachePoolKeys('test', true));
 
 //$inspector->dumpAllRedis();

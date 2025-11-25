@@ -59,9 +59,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo maybe enhance this
+     * An "key => value" array is returned corresponding accurately to the redis cache set
+     * (the PSR-16 SimpleCache only) for the currently selected db only.
      *
+     *
+     * @param bool $silent
      * @return array
+     * @throws ConnectionLostException | \Exception
      */
     public function dumpCacheStore(bool $silent = true): array
     {
@@ -78,9 +82,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo maybe enhance this
+     * Basically dumpCacheStore method applied to all databases set (16 by default)
+     * and not only to the currently selected db.
      *
+     *
+     * @param bool $silent
      * @return array
+     * @throws ConnectionLostException | \Exception
      */
     public function dumpAllCacheStores(bool $silent = true): array
     {
@@ -115,11 +123,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
+     * for the currently selected db only.
+     *
      * @param string $pool the pool's name
      * @return array
      * @throws ConnectionLostException
      */
-    public function getPoolKeys(string $pool): array
+    public function getPoolKeys(string $pool = self::DEFAULT_POOL_NAME): array
     {
         if (!$this->isConnected()) {
             $this->throwCLEx();
@@ -345,7 +355,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
       * @return string|null
       * @throws Exception
       */
-    public function dumpCachePool(string $pool = null, bool $silent = false): array
+    public function dumpCachePool(string $pool = self::DEFAULT_POOL_NAME, bool $silent = false): array
     {
         $pool = $this->getRedis()->hgetall($key);
         /**
@@ -378,16 +388,31 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-      * @todo do this
-      *
+     * print only pool keys set (Hash Keys) for the currently selected db only.
+     *
      *
      * @param string $pool
      * @param bool $silent
      * @return array
+     * @throws ConnectionLostException
      */
-    public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array
+    public function dumpCachePoolKeys(string $pool = self::DEFAULT_POOL_NAME, bool $silent = false): array
     {
+        $hkeys = $this->getPoolKeys($pool);
+        if ($silent === false) {
+            $count = count($hkeys);
+            $this->cli->backgroundLightYellow()->blink()->dim()->black()->inline('> > > >');
+            $this->cli->yellow()->bold()->inline(' ' . $pool)
+                    ->yellow()
+                    ->inline(' (' . $count . ' key' . ($count > 1 ? 's' : '') . ') ')
+            ;
+            $this->cli->backgroundLightYellow()->blink()->dim()->black()->out('< < < <');
+            foreach ($hkeys as $hkey) {
+                $this->cli->yellow()->out($hkey);
+            }
+        }
 
+        return $hkeys;
     }
 
 
