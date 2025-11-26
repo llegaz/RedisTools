@@ -34,10 +34,9 @@ interface InspectorInterface
      * @param bool $silent
      * @return array
      * @throws ConnectionLostException
-     *
-     * @todo end this please
+     * @throws Exception
      */
-    public function dumpCachePool(string $pool = null, bool $silent = false): array;
+    public function dumpCachePool(string $pool, bool $silent = false): array;
 
     /**
      * print only pool keys set (Hash Keys) for the currently selected db only.
@@ -49,7 +48,7 @@ interface InspectorInterface
      * @return array
      * @throws ConnectionLostException
      */
-    public function dumpCachePoolKeys(string $pool = null, bool $silent = false): array;
+    public function dumpCachePoolKeys(string $pool, bool $silent = false): array;
 
 
     /**
@@ -121,7 +120,12 @@ interface InspectorInterface
      *
      * then by pools' names (maybe find a default name for the SimpleCache)
      *
+     * @param bool $silent
+     * @param int $db_start
+     * @param int $db_end
      * @return array
+     * @throws ConnectionLostException
+     * @throws Exception
      */
     public function dumpAllRedis(bool $silent = false, int $db_start, int $db_end): array;
 

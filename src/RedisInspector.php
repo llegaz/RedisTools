@@ -160,7 +160,12 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      * print all keys /values / TTL / count for each DB used in redis server instance
      *
      *
+     * @param bool $silent
+     * @param int $db_start
+     * @param int $db_end
      * @return array
+     * @throws ConnectionLostException
+     * @throws Exception
      */
     public function dumpAllRedis(bool $silent = false, int $db_start = 0, int $db_end = self::DB_COUNT): array
     {
@@ -197,6 +202,8 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      * @param int $db_start
      * @param int $db_end
      * @return array
+     * @throws ConnectionLostException
+     * @throws Exception
      */
     private function dumpAllPhpRedis(bool $silent = false, int $db_start, int $db_end): array
     {
@@ -273,7 +280,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
                     // populate toReturn array with data
                     $toReturn[$dbName][self::CACHE] = $cache;
                 } else {
-                    $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt . ' PSR-6 pool' . ($poolCnt > 1 ? 's' : '') . PHP_EOL);
+                    if ($poolCnt) {
+                        $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt . ' PSR-6 pool' . ($poolCnt > 1 ? 's' : '') . PHP_EOL);
+                    }
                     $this->cli->yellow()->inline($dbName)
                             ->yellow()->inline(' - ')
                             ->yellow()->underline()->inline(self::CACHE)
@@ -295,37 +304,98 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      */
     private function dumpAllPredis(bool $silent = false, int $db_start, int $db_end): array
     {
-        $toReturn = [];
-
         $info = $this->getInfo();
-        dump($info);
         $count = 0;
-        $keys = [];
         $toReturn = [];
+        $ttl = null;
 
-        for ($i = 0; $i < self::DB_COUNT; $i++) {
-            if (isset($info['Keyspace']['db' . $i])) {
+        /***
+         * we parse all dbs, each DB owns a data store (PSR-16 SimpleCache) and possibly many pools
+         */
+        for ($i = $db_start; $i < $db_end; $i++) {
+            $dbName = 'db' . $i;
+            if (isset($info['Keyspace'][$dbName])) {
+                $tmp = $info['Keyspace'][$dbName];
+                $cache = [];
+                $poolCnt = 0;
+
                 $this->selectDatabase($i);
                 $keys = $this->getAllkeys();
-                dd($keys);
-                $count = (int) $info['Keyspace']['db' . $i]['keys'] ?? $count;
-                //dd($info['Keyspace']['db' . $i], $count);
+                if (isset($tmp['keys'])) {
+                    $count = (int) $tmp['keys'];
+                }
                 if (count($keys) !== $count) {
                     $this->throwUEx("keys\' count should be the same");
                 }
-                foreach ($keys as $key) {
-                    $hkeys = $this->getPoolKeys($key);
-                    if (count($hkeys)) {
-                        dump('for the pool named: ' . $key);
-                        foreach ($hkeys as $hkey) {
-                            dump($key . ':' . $hkey . '=' . $this->getRedis()->hget($key, $hkey) . ' - ' . $this->getTtl($key));
-                        }
-                    }
 
+                if ($silent) {
+                    // populate toReturn array with data
+                    $toReturn[$dbName]['count'] = $count;
+                } else {
+                    $this->cli->backgroundLightYellow()->blink()->dim()->black()->inline('> > > >');
+                    $this->cli->yellow()->bold()->inline(' ' . $dbName)
+                            ->yellow()
+                            ->inline(' (' . $count . ' key' . ($count > 1 ? 's' : '') . ') ')
+                    ;
+                    $this->cli->backgroundLightYellow()->blink()->dim()->black()->out('< < < <');
                 }
 
+                foreach ($keys as $key) {
+                    try {
+                        $pool = $this->getRedis()->hgetall($key);
+                    } catch (\Exception $e) {
+                        //do nothing
+                        $pool = null;
+                    }
+                    /**
+                     * Here goes the POOLs case (PSR-6)
+                     */
+                    if (is_array($pool) && count($pool)) {
+                        $table = [];
+                        ++$poolCnt;
+                        foreach ($pool as $hkey => $hval) {
+                            $ttl = $this->getTtl($key/*, $hkey*/);
+                            $table[] = [
+                                $key . ' pool key' => $hkey,
+                                $key . ' pool value' => $hval,
+                                'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
+                            ];
+                        }
+                        if ($silent) {
+                            // populate toReturn array with data
+                            $toReturn[$dbName][$key] = $table;
+                        } else {
+                            $this->cli->yellow()->inline($dbName)
+                                    ->yellow()->inline(' - ')
+                                    ->yellow()->out($key)
+                            ;
+                            $this->cli->yellow()->table($table);
+                        }
+                    } else { // STR Cache case (PSR-16)
+                        $ttl = $this->getTtl($key);
+                        $cache[] = [
+                            self::CACHE . ' key' => $key,
+                            self::CACHE . ' value' => $this->getRedis()->get($key) ?? 'empty or error',
+                            'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
+                        ];
+                    }
+                } // end foreach
 
-            }
+                if ($silent) {
+                    // populate toReturn array with data
+                    $toReturn[$dbName][self::CACHE] = $cache;
+                } else {
+                    if ($poolCnt) {
+                        $this->cli->yellow()->bold()->out('Iterated on ' . $poolCnt . ' PSR-6 pool' . ($poolCnt > 1 ? 's' : '') . PHP_EOL);
+                    }
+                    $this->cli->yellow()->inline($dbName)
+                            ->yellow()->inline(' - ')
+                            ->yellow()->underline()->inline(self::CACHE)
+                            ->yellow()->bold()->out(' (' . count($cache) . ' keys)')
+                    ;
+                    $this->cli->cyan()->table($cache);
+                }
+            } // if db exist
         }
 
         return $toReturn;
@@ -345,48 +415,52 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         return 0;
     }
 
+    
     /**
-      * @todo do this
-      *
-      * @param string $pool
-      * @param bool $silent
-      * @return string|null
-      * @throws Exception
-      */
-    public function dumpCachePool(string $pool = self::DEFAULT_POOL_NAME, bool $silent = false): array
-    {
-        $pool = $this->getRedis()->hgetall($key);
-        /**
-         * Here goes the POOLs case (PSR-6)
-         */
-        if (is_array($pool) && count($pool)) {
-            $table = [];
-            ++$poolCnt;
-            foreach ($pool as $hkey => $hval) {
-                $ttl = $this->getTtl($key/* , $hkey */);
-                $table[] = [
-                    $key . ' pool key' => $hkey,
-                    $key . ' pool value' => $hval,
+     * print or return as array all cache pool fields, for a given pool's name. (key, value and TTL)
+     *
+     *
+     * Default Cache pool if $pool parameter is null
+     *
+     * if $silent parameter is false then all data are printed directly using STD_OUT (terminal)
+     *
+     * @caution select DB prior call !
+     *
+     * @param string $pool
+     * @param bool $silent
+     * @return array
+     * @throws ConnectionLostException
+     * @throws Exception
+     */
+    public function dumpCachePool(string $pool = self::DEFAULT_POOL_NAME, bool $silent = false): array {
+        $toReturn = [];
+        $data = $this->getRedis()->hgetall($pool);
+
+        if (is_array($data) && count($data)) {
+            foreach ($data as $hkey => $hval) {
+                $ttl = $this->getTtl($pool);
+                $toReturn[] = [
+                    $pool . ' pool key' => $hkey,
+                    $pool . ' pool value' => $hval,
                     'TTL' => $ttl === -1 ? 'forever' : $ttl . 's',
                 ];
             }
-            if ($silent) {
-                // populate toReturn array with data
-                $toReturn[$dbName][$key] = $table;
-            } else {
-                $this->cli->yellow()->inline($dbName)
-                        ->yellow()->inline(' - ')
-                        ->yellow()->out($key)
-                ;
-                $this->cli->yellow()->table($table);
+            if (!$silent) {
+                $this->cli->yellow()->bold()->out($pool);
+                $this->cli->yellow()->table($toReturn);
             }
-        } else { // error
-            throw new Exception('pool ' . $pool . ' is empty or doesn\'t exist');
+        } else {
+            if (!$silent) {
+                $this->cli->red()->bold()->out('The pool named ' . $pool . ' is empty or doesn\'t exist.');
+            }
         }
+
+        return $toReturn;
     }
 
     /**
      * print only pool keys set (Hash Keys) for the currently selected db only.
+     * @caution select DB prior call !
      *
      *
      * @param string $pool
