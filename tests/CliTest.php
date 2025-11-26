@@ -13,22 +13,37 @@ if ($inspector->selectDatabase($db) === false) {
     dump("cannot connect to db-" . $db);
 }*/
 
-$inspector->selectDatabase(12);
+$inspector->selectDatabase(1);
+
+/*
+dump($inspector->getAllkeys());
+
+dump($inspector->getInfo());
+dump($inspector->getTtl('tata'));
+
+$inspector->dumpCachePool();
+$inspector->dumpCachePoolKeys();
+dump($inspector->getPoolKeys());
 
 
-//dump($inspector->getAllkeys());
 
-//dump($inspector->getInfo());
-//dump($inspector->getTtl('tata'));
+dump($inspector->dumpCacheStore());
+ 
+dump($inspector->dumpAllCacheStores());
+ */
 
 
 
 
-//dump($inspector->dumpCacheStore());
-//dump($inspector->dumpAllCacheStores());
+
+
+
 
 $inspector->selectDatabase(1);
 $inspector->dumpCachePoolKeys('test');
 dump($inspector->dumpCachePoolKeys('test', true));
 
 //$inspector->dumpAllRedis();
+
+
+echo $inspector->getRedis() . PHP_EOL;
