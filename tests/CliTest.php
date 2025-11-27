@@ -13,9 +13,9 @@ if ($inspector->selectDatabase($db) === false) {
     dump("cannot connect to db-" . $db);
 }*/
 
-$inspector->selectDatabase(1);
+/*$inspector->selectDatabase(12);
 
-/*
+
 dump($inspector->getAllkeys());
 
 dump($inspector->getInfo());
@@ -28,12 +28,8 @@ dump($inspector->getPoolKeys());
 
 
 dump($inspector->dumpCacheStore());
- 
+
 dump($inspector->dumpAllCacheStores());
- */
-
-
-
 
 
 
@@ -42,8 +38,13 @@ dump($inspector->dumpAllCacheStores());
 $inspector->selectDatabase(1);
 $inspector->dumpCachePoolKeys('test');
 dump($inspector->dumpCachePoolKeys('test', true));
+$inspector->dumpCachePool('test');
 
-//$inspector->dumpAllRedis();
+
+$inspector->dumpAllRedis();
+*/
+
+$inspector->dumpAllRedis(false, 0, 2);
 
 
 echo $inspector->getRedis() . PHP_EOL;
