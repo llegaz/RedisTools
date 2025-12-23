@@ -12,33 +12,39 @@ use LLegaz\Redis\RedisClientInterface;
 
 /**
  * Redis Inspector - A debugging tool for analyzing Redis cache structures
- *
+ * 
+ * 
  * <b>WARNING: DO NOT USE IN PRODUCTION</b>
  *
  * This tool uses Redis commands with O(n) complexity (KEYS, HGETALL) which can
  * significantly impact Redis performance. Use only in development/debugging scenarios.
  *
- * Designed to work with PSR-6 (Cache Pools) and PSR-16 (Simple Cache) implementations.
+ * Designed to work with PSR-6 (Cache Pools) and PSR-16 (Simple Cache) implementations
+ * from my other repositories.
+ * @see https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
+ * 
+ * 
+ * 
+ * <b>WARNING: DO NOT USE IN PRODUCTION</b>
+ * 
+ * This is a first naive version, it could be enhanced a lot of course and hopefully it will be.
+ * Contributions are welcomed.
+ * 
  *
  * @see https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
  * @author Laurent LEGAZ <laurent@legaz.eu>
  */
 class RedisInspector extends RedisAdapter implements InspectorInterface
 {
-    // Display constants
     private const DEFAULT_POOL_NAME = 'DEFAULT_Cache_Pool';
     private const CACHE_LABEL = 'SimpleCache PSR-16';
     private const DEFAULT_DB_COUNT = 16;
 
-    // TTL constants for better readability
     private const TTL_FOREVER = -1;
     private const TTL_NOT_FOUND = -2;
 
     private CLImate $cli;
 
-    /**
-     * Constructor - Initializes Redis connection and CLI interface
-     */
     public function __construct(
         string $host = RedisClientInterface::DEFAULTS['host'],
         int $port = RedisClientInterface::DEFAULTS['port'],
@@ -145,7 +151,6 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     /**
      * Dumps all Redis data across specified database range
      *
-     * REFACTOR: Added validation and clearer client detection
      *
      * @param bool $silent Whether to suppress CLI output
      * @param int $db_start Starting database index
@@ -160,13 +165,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     ): array {
         $this->validateDatabaseRange($db_start, $db_end);
 
-        $clientType = $this->getRedis()->toString();
-        $this->displayIntro($clientType, $silent);
+        $client = $this->getRedis()->toString();
+        $this->displayIntro($client, $silent);
 
-        return match ($clientType) {
+        return match ($client) {
             PredisClient::PREDIS => $this->dumpAllPredis($silent, $db_start, $db_end),
             RedisClient::PHP_REDIS => $this->dumpAllPhpRedis($silent, $db_start, $db_end),
-            default => throw new \Exception("Unsupported Redis client: {$clientType}")
+            default => throw new \Exception("Unsupported Redis client: {$client}")
         };
     }
 
@@ -207,7 +212,6 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     /**
      * Dumps only the keys from a specific cache pool
      *
-     * REFACTOR: Simplified and improved readability
      *
      * @param string $pool Pool name
      * @param bool $silent Whether to suppress CLI output
@@ -244,10 +248,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         return $this->getRedis()->keys('*');
     }
 
-    // ========== PRIVATE HELPER METHODS (REFACTORED FOR BETTER ORGANIZATION) ==========
+    // ========== PRIVATE HELPER METHODS ==========
 
     /**
-     * REFACTOR: Extracted validation logic
+     * validation logic
      *
      * @throws \InvalidArgumentException
      */
@@ -263,24 +267,26 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: Extracted intro display logic for separation of concerns
+     * 
+     * @param string $client
+     * @param bool $silent
+     * @return void
      */
-    private function displayIntro(string $clientType, bool $silent): void
+    private function displayIntro(string $client, bool $silent): void
     {
         if ($silent) {
             return;
         }
 
         $this->cli->inline('>' . PHP_EOL . '> Dumping Redis server data using ');
-        $this->cli->underline()->inline($clientType)->out(' client.' . PHP_EOL);
+        $this->cli->underline()->inline($client)->out(' client.' . PHP_EOL);
         $this->cli->backgroundLightBlue()->black()
             ->out('For each DB: PSR-6 pools first, then PSR-16 SimpleCache.');
         $this->cli->out(PHP_EOL);
     }
 
     /**
-     * REFACTOR: Major consolidation - eliminated duplicate code between PhpRedis and Predis
-     * Both methods shared 95% of logic, now unified with client-specific handling
+     * 
      *
      * @param bool $silent
      * @param int $db_start
@@ -290,11 +296,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      */
     private function dumpAllPhpRedis(bool $silent, int $db_start, int $db_end): array
     {
-        return $this->dumpAllDatabases($silent, $db_start, $db_end, 'phpredis');
+        return $this->dumpAllDatabases($silent, $db_start, $db_end, RedisClientInterface::PHP_REDIS);
     }
 
     /**
-     * REFACTOR: Unified with dumpAllPhpRedis using common dumpAllDatabases method
      *
      * @param bool $silent
      * @param int $db_start
@@ -304,17 +309,15 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      */
     private function dumpAllPredis(bool $silent, int $db_start, int $db_end): array
     {
-        return $this->dumpAllDatabases($silent, $db_start, $db_end, 'predis');
+        return $this->dumpAllDatabases($silent, $db_start, $db_end, RedisClientInterface::PREDIS);
     }
 
     /**
-     * REFACTOR: NEW METHOD - Unified database dumping logic for both clients
-     * This eliminates 200+ lines of duplicate code
      *
      * @param bool $silent
      * @param int $db_start
      * @param int $db_end
-     * @param string $clientType 'phpredis' or 'predis'
+     * @param string $client 'phpredis' or 'predis'
      * @return array
      * @throws ConnectionLostException|\Exception
      */
@@ -322,7 +325,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         bool $silent,
         int $db_start,
         int $db_end,
-        string $clientType
+        string $client
     ): array {
         $info = $this->getInfo();
         $result = [];
@@ -331,13 +334,13 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
             $dbName = "db{$dbIndex}";
 
             // Check if database exists (different structure for each client)
-            if (!$this->databaseExists($info, $dbName, $clientType)) {
+            if (!$this->databaseExists($info, $dbName, $client)) {
                 continue;
             }
 
             $this->selectDatabase($dbIndex);
             $keys = $this->getAllkeys();
-            $keyCount = $this->getDatabaseKeyCount($info, $dbName, $clientType);
+            $keyCount = $this->getDatabaseKeyCount($info, $dbName, $client);
 
             // Validate key count matches
             if (count($keys) !== $keyCount) {
@@ -349,7 +352,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
             }
 
             // Process all keys in this database
-            $dbData = $this->processDatabaseKeys($keys, $dbName, $silent, $clientType);
+            $dbData = $this->processDatabaseKeys($keys, $dbName, $silent, $client);
 
             $result[$dbName] = [
                 'count' => $keyCount,
@@ -372,11 +375,15 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Checks if database exists (handles client differences)
+     * 
+     * @param array $info
+     * @param string $dbName
+     * @param string $client
+     * @return bool
      */
-    private function databaseExists(array $info, string $dbName, string $clientType): bool
+    private function databaseExists(array $info, string $dbName, string $client): bool
     {
-        if ($clientType === 'predis') {
+        if ($client === RedisClientInterface::PREDIS) {
             return isset($info['Keyspace'][$dbName]);
         }
 
@@ -384,11 +391,15 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Gets key count (handles client differences)
+     * 
+     * @param array $info
+     * @param string $dbName
+     * @param string $client
+     * @return int
      */
-    private function getDatabaseKeyCount(array $info, string $dbName, string $clientType): int
+    private function getDatabaseKeyCount(array $info, string $dbName, string $client): int
     {
-        if ($clientType === 'predis') {
+        if ($client === RedisClientInterface::PREDIS) {
             return (int) ($info['Keyspace'][$dbName]['keys'] ?? 0);
         }
 
@@ -396,7 +407,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: Improved method - clearer logic and variable names
+     * 
+     * @param string $payload
+     * @return int
      */
     private function parseKeysCount(string $payload): int
     {
@@ -414,21 +427,25 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Processes all keys in a database
-     * Separates pools (hashes) from simple cache entries
+     * 
+     * @param array $keys
+     * @param string $dbName
+     * @param bool $silent
+     * @param string $client
+     * @return array
      */
     private function processDatabaseKeys(
         array $keys,
         string $dbName,
         bool $silent,
-        string $clientType
+        string $client
     ): array {
         $pools = [];
         $cacheEntries = [];
         $poolCount = 0;
 
         foreach ($keys as $key) {
-            $poolData = $this->fetchPoolData($key, $clientType);
+            $poolData = $this->fetchPoolData($key, $client);
 
             if ($this->isPool($poolData)) {
                 // PSR-6 Pool (Hash)
@@ -453,9 +470,12 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Safely fetches pool data with error handling for Predis
+     * 
+     * @param string $key
+     * @param string $client
+     * @return array|null
      */
-    private function fetchPoolData(string $key, string $clientType): ?array
+    private function fetchPoolData(string $key, string $client): ?array
     {
         try {
             $data = $this->getRedis()->hgetall($key);
@@ -468,7 +488,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Determines if data represents a pool
+     * 
+     * @param array|null $data
+     * @return bool
      */
     private function isPool(?array $data): bool
     {
@@ -476,7 +498,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Formats pool data consistently
+     * 
+     * @param string $poolName
+     * @param array $poolData
+     * @return array
      */
     private function formatPoolData(string $poolName, array $poolData): array
     {
@@ -496,7 +521,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Formats a single cache entry
+     * 
+     * @param string $key
+     * @return array
      */
     private function formatCacheEntry(string $key): array
     {
@@ -511,7 +538,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Centralized TTL formatting
+     * 
+     * @param int $ttl
+     * @return string
      */
     private function formatTtl(int $ttl): string
     {
@@ -523,7 +552,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Displays database header
+     * 
+     * @param string $dbName
+     * @param int $count
+     * @return void
      */
     private function displayDatabaseHeader(string $dbName, int $count): void
     {
@@ -536,7 +568,11 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Displays pool data with consistent formatting
+     * 
+     * @param string $context
+     * @param array $data
+     * @param string|null $poolName
+     * @return void
      */
     private function displayPoolData(string $context, array $data, ?string $poolName = null): void
     {
@@ -558,7 +594,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Displays cache store
+     * 
+     * @param string $dbName
+     * @param array $cacheData
+     * @return void
      */
     private function displayCacheStore(string $dbName, array $cacheData): void
     {
@@ -575,7 +614,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * REFACTOR: NEW METHOD - Displays pool keys
+     * 
+     * @param string $poolName
+     * @param array $keys
+     * @return void
      */
     private function displayPoolKeys(string $poolName, array $keys): void
     {
