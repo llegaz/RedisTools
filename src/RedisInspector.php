@@ -59,7 +59,8 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 
     /**
      * Dumps the SimpleCache (PSR-16) store for the currently selected database
-     *
+     * @caution you have to select the redis database prior the call
+     * @see RedisAdapter::selectDatabase
      *
      * @param bool $silent Whether to suppress CLI output
      * @return array Key-value pairs from the SimpleCache store
@@ -177,6 +178,8 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 
     /**
      * Dumps a specific cache pool with all its keys, values, and TTLs
+     * @caution you have to select the redis database prior the call
+     * @see RedisAdapter::selectDatabase
      *
      *
      * @param string $pool Pool name to dump
@@ -193,7 +196,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         }
 
         $poolData = $this->getRedis()->hgetall($pool);
-        if (!is_array($poolData) || empty($poolData)) {
+        if (!$this->isPool($poolData)) {
             if (!$silent) {
                 $this->cli->red()->bold()->out("Pool '{$pool}' is empty or doesn't exist.");
             }
@@ -211,7 +214,8 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 
     /**
      * Dumps only the keys from a specific cache pool
-     *
+     * @caution you have to select the redis database prior the call
+     * @see RedisAdapter::selectDatabase
      *
      * @param string $pool Pool name
      * @param bool $silent Whether to suppress CLI output
@@ -233,8 +237,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 
     /**
      * Gets all keys from the currently selected database
+     * @caution you have to select the redis database prior the call
+     * @see RedisAdapter::selectDatabase
      *
-     * WARNING: Uses KEYS command - O(n) complexity, blocking operation!
+     * <b>WARNING:</b> Uses KEYS command - O(n) complexity, blocking operation!
      *
      * @return array All keys in current database
      * @throws ConnectionLostException
@@ -375,6 +381,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
+     * If the database exists then it should be returned by redis server info
      * 
      * @param array $info
      * @param string $dbName
