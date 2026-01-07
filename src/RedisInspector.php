@@ -12,8 +12,8 @@ use LLegaz\Redis\RedisClientInterface;
 
 /**
  * Redis Inspector - A debugging tool for analyzing Redis cache structures
- * 
- * 
+ *
+ *
  * <b>WARNING: DO NOT USE IN PRODUCTION</b>
  *
  * This tool uses Redis commands with O(n) complexity (KEYS, HGETALL) which can
@@ -22,14 +22,14 @@ use LLegaz\Redis\RedisClientInterface;
  * Designed to work with PSR-6 (Cache Pools) and PSR-16 (Simple Cache) implementations
  * from my other repositories.
  * @see https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
- * 
- * 
- * 
+ *
+ *
+ *
  * <b>WARNING: DO NOT USE IN PRODUCTION</b>
- * 
+ *
  * This is a first naive version, it could be enhanced a lot of course and hopefully it will be.
  * Contributions are welcomed.
- * 
+ *
  *
  * @see https://github.com/llegaz/RedisCache PSR-6 and PSR-16 implementation for Redis
  * @author Laurent LEGAZ <laurent@legaz.eu>
@@ -273,7 +273,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $client
      * @param bool $silent
      * @return void
@@ -292,7 +292,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      *
      * @param bool $silent
      * @param int $db_start
@@ -382,7 +382,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
 
     /**
      * If the database exists then it should be returned by redis server info
-     * 
+     *
      * @param array $info
      * @param string $dbName
      * @param string $client
@@ -398,7 +398,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param array $info
      * @param string $dbName
      * @param string $client
@@ -414,7 +414,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $payload
      * @return int
      */
@@ -434,7 +434,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param array $keys
      * @param string $dbName
      * @param bool $silent
@@ -477,7 +477,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $key
      * @param string $client
      * @return array|null
@@ -495,7 +495,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param array|null $data
      * @return bool
      */
@@ -505,7 +505,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $poolName
      * @param array $poolData
      * @return array
@@ -528,7 +528,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $key
      * @return array
      */
@@ -545,7 +545,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param int $ttl
      * @return string
      */
@@ -559,7 +559,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $dbName
      * @param int $count
      * @return void
@@ -575,7 +575,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $context
      * @param array $data
      * @param string|null $poolName
@@ -601,7 +601,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $dbName
      * @param array $cacheData
      * @return void
@@ -621,7 +621,7 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
     }
 
     /**
-     * 
+     *
      * @param string $poolName
      * @param array $keys
      * @return void
