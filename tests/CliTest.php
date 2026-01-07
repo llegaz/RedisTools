@@ -50,5 +50,5 @@ $inspector->dumpAllRedis(false, 0, 2);
 $inspector->dumpCachePool();*/
 
 
-echo "From CliTest.php: adapter used> " . $inspector->getRedis() . PHP_EOL;
-echo "See you space cowboy..." . PHP_EOL;
+echo 'From CliTest.php: adapter used> ' . $inspector->getRedis() . PHP_EOL;
+echo 'See you space cowboy...' . PHP_EOL;
