@@ -254,7 +254,11 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         return $this->getRedis()->keys('*');
     }
 
-    // ========== PRIVATE HELPER METHODS ==========
+    /**
+     *
+     * ========== PRIVATE HELPER METHODS ==========
+     *
+     */
 
     /**
      * validation logic

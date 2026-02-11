@@ -41,10 +41,15 @@ dump($inspector->dumpCachePoolKeys('test', true));
 $inspector->dumpCachePool('test');
 
 
-$inspector->dumpAllRedis();
-*/
 
-$inspector->dumpAllRedis(false, 0, 2);
+$data = $inspector->dumpAllRedis(true);
+if (isset($data['db7'])) {
+    $data = $data['db7'];
+}
+dump($data);*/
+
+$inspector->dumpAllRedis();
+
 
 /*$inspector->selectDatabase(1);
 $inspector->dumpCachePool();*/
