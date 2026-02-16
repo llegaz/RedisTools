@@ -48,11 +48,11 @@ if (isset($data['db7'])) {
 }
 dump($data);*/
 
-$inspector->dumpAllRedis();
+//$inspector->dumpAllRedis();
 
 
-/*$inspector->selectDatabase(1);
-$inspector->dumpCachePool();*/
+$inspector->selectDatabase(3);
+$inspector->dumpCacheStore();
 
 
 echo 'From CliTest.php: adapter used> ' . $inspector->getRedis() . PHP_EOL;

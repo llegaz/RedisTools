@@ -71,6 +71,10 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
         $currentDb = $this->getContext()['database'];
         $allData = $this->dumpAllRedis($silent, $currentDb, $currentDb + 1);
 
+        /***
+         * @todo rework all those non dumping fonctions !!!
+         */
+        //dd($allData["db{$currentDb}"][self::CACHE_LABEL] );
         // Extract cache store data for current DB
         return $allData["db{$currentDb}"][self::CACHE_LABEL] ?? [];
     }
@@ -85,6 +89,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
      */
     public function dumpAllCacheStores(bool $silent = true): array
     {
+        /***
+         * @todo rework those PSR 16 utils
+         */
         $allData = $this->dumpAllRedis($silent);
         $cacheStores = [];
 
@@ -94,6 +101,9 @@ class RedisInspector extends RedisAdapter implements InspectorInterface
             }
         }
 
+        /***
+         * @todo rework all those non dumping fonctions !!!
+         */
         return $cacheStores;
     }
 
