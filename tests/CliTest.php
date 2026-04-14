@@ -48,7 +48,7 @@ if (isset($data['db7'])) {
 }
 dump($data);*/
 
-//$inspector->dumpAllRedis();
+$inspector->dumpAllRedis();
 
 
 $inspector->selectDatabase(3);
