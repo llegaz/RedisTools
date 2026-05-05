@@ -1,7 +1,7 @@
 # RedisTools
 
 This tool primary purpose is to pair with my own implementation of PSR-6 pools or PSR-16 Simple Cache:
-![RedisCache by Laurent LEGAZ](https://github.com/llegaz/RedisCache/workflows/CI/badge.svg)(https://github.com/llegaz/RedisCache/actions)
+[![RedisCache by Laurent LEGAZ](https://github.com/llegaz/RedisCache/workflows/CI/badge.svg)](https://github.com/llegaz/RedisCache/actions)
 
 ![redis tools screenshot terminal preview](./redis-tools.png)
 
